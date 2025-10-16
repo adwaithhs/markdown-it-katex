@@ -36,7 +36,7 @@ export interface MarkdownKatexOptions {
     /**
      * Support for custom katex instance for extension such as mhchem 
      */
-    katex?: typeof Katex
+    katex: typeof Katex
 }
 
 export default function (md: MarkdownIt, options?: MarkdownKatexOptions): MarkdownIt;
