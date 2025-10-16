@@ -5,6 +5,14 @@ import type * as StateInline from 'markdown-it/lib/rules_inline/state_inline';
 import type * as Token from 'markdown-it/lib/token';
 import { MarkdownKatexOptions } from '../types';
 
+function matchAllShim(str: string, regex: RegExp): RegExpExecArray[] {
+  const results: RegExpExecArray[] = [];
+  let m;
+  const re = new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : regex.flags + 'g');
+  while ((m = re.exec(str))) results.push(m);
+  return results;
+}
+
 /**
  * Test if potential opening or closing delimiter
  */
@@ -65,7 +73,7 @@ function inlineMath(state: StateInline, silent: boolean): boolean {
         return false;
     }
 
-    const lastToken = state.tokens.at(-1);
+    const lastToken = state.tokens[state.tokens.length - 1];
     if (lastToken?.type === 'html_inline') {
         // We may be inside of inside of inline html
         if (/^<\w+.+[^/]>$/.test(lastToken.content)) {
@@ -158,7 +166,7 @@ function blockMath(state: StateBlock, start: number, end: number, silent: boolea
     let firstLine = state.src.slice(pos, max);
 
     // Check for single line expressions such as `$$x$$`
-    const endIndexes = [...firstLine.matchAll(/\$\$/g)];
+    const endIndexes = [...matchAllShim(firstLine, /\$\$/g)];
     if (endIndexes.length === 1 && endIndexes[0].index === firstLine.length - 2) {
         // Fake inline expression such as `$$x$$`
         // We actually want to treat this as a block instead of inline
@@ -257,7 +265,7 @@ function blockBareMath(state: StateBlock, start: number, end: number, silent: bo
         }
 
         const line = state.src.slice(pos, max);
-        for (const match of line.matchAll(/(\\begin|\\end)\s*\{([^{}]+)\}/g)) {
+        for (const match of matchAllShim(line, /(\\begin|\\end)\s*\{([^{}]+)\}/g)) {
             if (match[1] === '\\begin') {
                 beginEndStack.push(match[2].trim());
             } else if (match[1] === '\\end') {
@@ -376,7 +384,7 @@ function inlineBareBlock(state: StateInline, silent: boolean): boolean {
     const beginEndStack: string[] = [];
     outer: for (var i = 0; i < lines.length; ++i) {
         const line = lines[i];
-        for (const match of line.matchAll(/(\\begin|\\end)\s*\{([^{}]+)\}/g)) {
+        for (const match of matchAllShim(line, /(\\begin|\\end)\s*\{([^{}]+)\}/g)) {
             if (match[1] === '\\begin') {
                 beginEndStack.push(match[2].trim());
             } else if (match[1] === '\\end') {
@@ -419,14 +427,9 @@ function handleMathInHtml(state: StateCore, mathType: string, mathMarkup: string
         const content = currentToken.content;
 
         // Process for each math referenced within the html block
-        for (const match of content.matchAll(mathRegex)) {
-            if (!match.groups) {
-                continue;
-            }
+        for (const match of matchAllShim(content, mathRegex)) {
 
-            const html_before_math = match.groups.html_before_math;
-            const math = match.groups.math;
-            const html_after_math = match.groups.html_after_math;
+            const [_, html_before_math, math, html_after_math] = match;
 
             if (html_before_math) {
                 newTokens.push({ ...currentToken, type: "html_block", map: null, content: html_before_math } as Token);
@@ -491,10 +494,10 @@ export default function (md: import('markdown-it'), options?: MarkdownKatexOptio
     });
 
     // Regex to capture any html prior to math block, the math block (single or multi line), and any html after the math block
-    const math_block_within_html_regex = /(?<html_before_math>[\s\S]*?)\$\$(?<math>[\s\S]+?)\$\$(?<html_after_math>(?:(?!\$\$[\s\S]+?\$\$)[\s\S])*)/gm;
+    const math_block_within_html_regex = /([\s\S]*?)\$\$([\s\S]+?)\$\$((?:(?!\$\$[\s\S]+?\$\$)[\s\S])*)/gm;
 
     // Regex to capture any html prior to math inline, the math inline (single line), and any html after the math inline
-    const math_inline_within_html_regex = /(?<html_before_math>[\s\S]*?)\$(?<math>.*?)\$(?<html_after_math>(?:(?!\$.*?\$)[\s\S])*)/gm;
+    const math_inline_within_html_regex = /([\s\S]*?)\$(.*?)\$((?:(?!\$.*?\$)[\s\S])*)/gm;
 
     if (enableMathBlockInHtml) {
         md.core.ruler.push("math_block_in_html_block", (state) => {
