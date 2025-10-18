@@ -1,7 +1,8 @@
 const fs = require('fs');
 const mdk = require('../dist/index').default;
+const katex = require('katex');
 const md = require('markdown-it')()
-    .use(mdk);
+    .use(mdk, { katex });
 
 const file = fs.readFileSync(process.argv[2])
 

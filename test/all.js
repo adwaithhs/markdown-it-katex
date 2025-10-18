@@ -1,5 +1,6 @@
 const path = require('path');
 const tape = require('tape');
+const katex = require('katex');
 const testLoad = require('markdown-it-testgen').load;
 const mdk = require('../dist/index').default;
 const mdIt = require('markdown-it');
@@ -45,10 +46,10 @@ function normalizeWithStub(text) {
 }
 
 
-runTest(path.join(__dirname, 'fixtures', 'default.txt'), mdIt({ html: true }).use(mdk,));
+runTest(path.join(__dirname, 'fixtures', 'default.txt'), mdIt({ html: true }).use(mdk, { katex } ));
 
-runTest(path.join(__dirname, 'fixtures', 'bare.txt'), mdIt().use(mdk, { enableBareBlocks: true }));
+runTest(path.join(__dirname, 'fixtures', 'bare.txt'), mdIt().use(mdk, { katex, enableBareBlocks: true }));
 
-runTest(path.join(__dirname, 'fixtures', 'math-in-html.txt'), mdIt({ html: true }).use(mdk, { enableMathBlockInHtml: true, enableMathInlineInHtml: true }));
+runTest(path.join(__dirname, 'fixtures', 'math-in-html.txt'), mdIt({ html: true }).use(mdk, { katex, enableMathBlockInHtml: true, enableMathInlineInHtml: true }));
 
-runTest(path.join(__dirname, 'fixtures', 'fence.txt'), mdIt({ html: true }).use(mdk, { enableFencedBlocks: true }));
+runTest(path.join(__dirname, 'fixtures', 'fence.txt'), mdIt({ html: true }).use(mdk, { katex, enableFencedBlocks: true }));
